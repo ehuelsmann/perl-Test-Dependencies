@@ -42,7 +42,7 @@ sub get_modules_used_in_file {
   my $p = Pod::Strip->new;
   $p->output_string(\$code);
   $p->parse_string_document($data);
-  $used{$1}++ while $code =~ /^\s*use\s+([\w:]+)/gm;
+  $used{$2}++ while $code =~ /^\s*(use|with|extends)\s+['"]?([\w:]+)['"]?/gm;
   while ($code =~ m{^\s*use\s+base\s+(?:qw.|(?:(?:['"]|q.|qq.)))([\w\s:]+)}gm) {
     $used{$_}++ for split ' ', $1;
   }

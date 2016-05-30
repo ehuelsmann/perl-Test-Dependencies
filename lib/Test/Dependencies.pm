@@ -4,23 +4,21 @@ use warnings;
 use strict;
 
 use Carp;
-use File::Find::Rule;
 use Module::CoreList;
-use YAML qw(LoadFile);
 
 use base 'Test::Builder::Module';
 
 =head1 NAME
 
-Test::Dependencies - Ensure that your Makefile.PL specifies all module dependencies
+Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.12
+Version 0.20
 
 =cut
 
-our $VERSION = '0.12';
+our $VERSION = '0.20';
 
 =head1 SYNOPSIS
 
@@ -93,7 +91,7 @@ sub import {
       croak "$namespace is not a valid namespace"
         unless $namespace =~ m/^(?:(?:\w+::)|)+\w+$/;
     }
-    $exclude_re = join '|', @{$args{exclude}};
+    $exclude_re = join '|', map { "^$_(\$|::)" } @{$args{exclude}};
   }
 
   if (defined $ENV{TDSTYLE}) {
@@ -119,135 +117,102 @@ sub _choose_style {
     carp "Unknown style: '", $style, "'";
   }
 }
-    
-sub _get_files_in {
-  my @dirs = @_;
-  my $rule = File::Find::Rule->new;
-  $rule->or($rule->new
-                 ->directory
-                 ->name('.svn')
-                 ->prune
-                 ->discard,
-            $rule->new
-                 ->directory
-                 ->name('CVS')
-                 ->prune
-                 ->discard,
-            $rule->new
-                 ->name(qr/~$/)
-                 ->discard,
-            $rule->new
-                 ->name(qr/\.pod$/)
-                 ->discard,
-            $rule->new
-                 ->not($rule->new->file)
-                 ->discard,
-            $rule->new);
-  return $rule->in(grep {-e $_} @dirs);
-}
 
-sub _get_modules_used_in_dir {
-  my @dirs = @_;
-  my @sourcefiles = _get_files_in(@dirs);
-  my @modules;
+sub _get_modules_used {
+    my ($files) = @_;
+    my @modules;
 
-  foreach my $file (sort @sourcefiles) {
-    my $ret = get_modules_used_in_file($file);
-    if (! defined $ret) {
-      die "Could not determine modules used in '$file'";
+    foreach my $file (sort @$files) {
+        my $ret = get_modules_used_in_file($file);
+        if (! defined $ret) {
+            die "Could not determine modules used in '$file'";
+        }
+        push @modules, @$ret;
     }
-    push @modules, @$ret;
-  }
-  return @modules;
+    return @modules;
 }
 
-sub _get_used {
-  return _get_modules_used_in_dir(qw/bin lib/);
-}
-
-sub _get_build_used {
-  return _get_modules_used_in_dir(qw/t/);
-}
 
 =head1 EXPORTED FUNCTIONS
 
-=head2 ok_dependencies
+=head2 ok_dependencies($meta, $files, $phases, $features)
 
-This should be the only test called in the test file.  It scans
-bin/ and lib/ for module usage and t/ for build usage.  It will
-then test that all modules used are listed as required in
-Makefile.PL, all modules used in t/ are listed as build required,
-that all modules listed are actually used, and that modules that
-are listed are not in the core list.
+ $meta is a CPAN::Meta object
+ $files is an arrayref with files to be scanned
+ $phase is an arrayref holding one or more phases, or undef for all
+ $features is an arrayref holding zero or more features, or undef for all
 
 =cut
 
 sub ok_dependencies {
-  my $tb = __PACKAGE__->builder;
-  my %used = map { $_ => 1 } _get_used;
-  my %build_used = map { $_ => 1 } _get_build_used;
+    my ($meta, $files, $phases, $features, %options) = @_;
 
-  # remove modules from build deps if they are hard deps
-  foreach my $mod (keys %used) {
-    delete $build_used{$mod} if exists $build_used{$mod};
-  }
+    $features //= $meta->features;
+    $features = [ $features ] unless ref $features;
+    $phases //= [ 'runtime', 'configure', 'test', 'develop' ];
+    $phases = [ $phases ] unless ref $phases;
 
-  if (-r 'META.yml') {
-    $tb->ok(1, 'META.yml is present and readable');
-  } else {
-    $tb->ok(0, 'META.yml is present and readable');
-    $tb->diag("You seem to be missing a META.yml.  I can't check which dependencies you've declared without it\n");
-    return;
-  }
-  my $meta = LoadFile('META.yml') or die 'Could not load META.YML';
-  my %required = exists $meta->{requires} && defined $meta->{requires} ? %{$meta->{requires}} : ();
-  # "perl" is not a real dependency, but people often specify a
-  # minimum perl version in their META.yml
-  delete $required{'perl'};
-  my %build_required = exists $meta->{build_requires} ? %{$meta->{build_requires}} : ();
+    my $tb = __PACKAGE__->builder;
+    my %used = map { $_ => 1 } _get_modules_used($files);
 
-  foreach my $mod (sort keys %used) {
-    my $first_in = Module::CoreList->first_release($mod);
-    if (defined $first_in and $first_in <= 5.00803) {
-      $tb->ok(1, "run-time dependency '$mod' has been in core since before 5.8.3");
-      delete $used{$mod};
-      delete $required{$mod};
-      next;
+    my $prereqs = $meta->effective_prereqs;
+    $prereqs = $prereqs->with_merged_prereqs($_)
+        for (map { $_->prereqs } $meta->features);
+    my $reqs = [];
+
+    push @$reqs, $prereqs->requirements_for($_, 'requires')
+        for (@$phases);
+
+    my $min_perl_ver;
+    my $minimum_perl;
+    for (map { $_->requirements_for_module('perl') } @$reqs) {
+        next if ! defined $_;
+
+        my $ver = version->parse($_)->numify;
+        $min_perl_ver = (defined $min_perl_ver && $min_perl_ver < $ver)
+            ? $min_perl_ver : $ver;
+        $minimum_perl = (defined $min_perl_ver && $min_perl_ver < $ver)
+            ? $minimum_perl : $_;
     }
-    if (defined $exclude_re && $mod =~ m/^($exclude_re)(::|$)/) {
-      delete $used{$mod};
-      next;
+
+    for my $req (@$reqs) {
+        for my $mod (sort $req->required_modules) {
+            next if $mod eq 'perl';
+
+            my $first_in = Module::CoreList->first_release($mod, $mod->VERSION);
+            my $verstr = ($mod->VERSION) ? '(' . $mod->VERSION . ')' : '';
+            my $corestr = version->parse($first_in)->normal;
+            $tb->ok($first_in > $min_perl_ver,
+                    "Required core module '$mod'$verstr "
+                    . "in core (since $corestr) after minimum perl "
+                    . $minimum_perl )
+                if defined $first_in;
+        }
     }
-    $tb->ok(exists $required{$mod}, "requires('$mod') in Makefile.PL");
-    delete $used{$mod};
-    delete $required{$mod};
-  }
 
-  foreach my $mod (sort keys %build_used) {
-    my $first_in = Module::CoreList->first_release($mod);
-    if (defined $first_in and $first_in <= 5.00803) {
-      $tb->ok(1, "build-time dependency '$mod' has been in core since before 5.8.3");
-      delete $build_used{$mod};
-      delete $build_required{$mod};
-      next;
+    my %required;
+    for (@$reqs) {
+        $required{$_} = 1
+            for $_->required_modules;
     }
-    if (defined $exclude_re && $mod =~ m/^($exclude_re)(::|$)/) {
-      delete $build_used{$mod};
-      next;
+    delete $required{perl};
+
+    my %ignores = map { $_ => 1 } @{$options{ignores} // []};
+    foreach my $mod (sort keys %required) {
+        $tb->ok(exists $used{$mod}, "Declared dependency $mod used")
+            unless exists $ignores{$mod};
     }
-    $tb->ok(exists $build_required{$mod}, "build_requires('$mod') in Makefile.PL");
-    delete $build_used{$mod};
-    delete $build_required{$mod};
-  }  
 
-  foreach my $mod (sort keys %required) {
-    $tb->ok(0, "$mod is not a run-time dependency");
-  }
+    foreach my $mod (sort keys %used) {
+        my $first_in = Module::CoreList->first_release($mod);
+        $tb->ok($first_in <= $min_perl_ver,
+                "Used core module '$mod' in core before perl $minimum_perl")
+            if defined $first_in;
 
-  foreach my $mod (sort keys %build_required) {
-    $tb->ok(0, "$mod is not a build-time dependency");
-  }
-
+        $tb->ok(exists $required{$mod},
+                "Used non-core module '$mod' in requirements listing")
+            unless defined $first_in or $mod =~ $exclude_re;
+    }
 }
 
 =head1 AUTHORS
@@ -260,6 +225,8 @@ sub ok_dependencies {
 
 =item * Zev Benjamin C<< <zev at cpan.org> >>
 
+=item * Erik Huelsmann C<< <ehuels at gmail.com> >>
+
 =back
 
 =head1 BUGS
@@ -267,8 +234,6 @@ sub ok_dependencies {
 =over 4
 
 =item * Test::Dependencies does not track module version requirements.
-
-=item * Perl version for "already in core" test failures is hardcoded.
 
 =back
 
@@ -308,6 +273,7 @@ L<http://search.cpan.org/dist/Test-Dependencies>
 
 =head1 LICENCE AND COPYRIGHT
 
+    Copyright (c) 2016, Erik Huelsmann. All rights reserved.
     Copyright (c) 2007, Best Practical Solutions, LLC. All rights reserved.
 
     This module is free software; you can redistribute it and/or modify it
