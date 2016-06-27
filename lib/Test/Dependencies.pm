@@ -24,10 +24,19 @@ our $VERSION = '0.20';
 
 In your t/00-dependencies.t:
 
+    use CPAN::Meta;  # or CPAN::Meta::cpanfile
+    use File::Find::Rule::Perl;
     use Test::Dependencies exclude =>
       [qw/ Your::Namespace Some::Other::Namespace /];
 
-    ok_dependencies();
+    my $meta = CPAN::Meta->load_file('META.yml');
+    die "No META.yml" if ! $meta;
+
+    my @files =
+       File::Find::Rule::Perl->perl_files->in('./lib', './bin');
+
+    ok_dependencies($meta, \@files);
+
 
 =head1 DESCRIPTION
 
@@ -36,8 +45,9 @@ Makefile.PL as dependencies.
 
 =head1 OPTIONS
 
-You can pass options to the module via the 'use' line.  The available
-options are:
+B<DEPRECATED> You can pass options to the module via the 'use' line.
+These options will be moved to the ok_dependencies() function.
+The available options are:
 
 =over 4
 
@@ -168,8 +178,7 @@ sub _legacy_ok_dependencies {
     my @run = File::Find::Rule::Perl->perl_file->in(
         grep { -e $_ } ('./bin', './lib', './t'));
 
-    ok_dependencies($meta, \@run, undef, undef,
-        ignores => [ 'ExtUtils::MakeMaker']);
+    ok_dependencies($meta, \@run, ignores => [ 'ExtUtils::MakeMaker']);
 }
 
 
@@ -179,8 +188,37 @@ sub _legacy_ok_dependencies {
 
  $meta is a CPAN::Meta object
  $files is an arrayref with files to be scanned
- $phase is an arrayref holding one or more phases, or undef for all
- $features is an arrayref holding zero or more features, or undef for all
+
+=head3 %options keys
+
+=over
+
+=item phases
+
+This is an arrayref holding one or more names of phases
+as defined by L<CPAN::Meta::Spec>, or undef for all
+
+=item features
+
+This is an arrayref holding zero or more names of features, or undef for all
+
+=item ignores
+
+This is a hashref listing the names of modules (and their sub-namespaces)
+for which no errors are to be reported.
+
+=back
+
+=head2 ok_dependencies()
+
+B<Deprecated.> Legacy invocation to be removed. In previous versions,
+this function would scan the I<entire> bin/, lib/ and t/ subtrees, with the
+exception of a few sub-directories known to be used by version control
+systems.
+
+This behaviour has been changed: as of 0.20, Find::File::Rule::Perl
+is being used to find Perl files (*.pl, *.pm, *.t and those starting with
+a shebang line referring to perl).
 
 =cut
 
@@ -189,7 +227,9 @@ sub ok_dependencies {
     return _legacy_ok_dependencies
         unless @_;
 
-    my ($meta, $files, $phases, $features, %options) = @_;
+    my ($meta, $files, %options) = @_;
+    my $phases = $options{phases};
+    my $features = $options{features};
 
     $features //= $meta->features;
     $features = [ $features ] unless ref $features;
