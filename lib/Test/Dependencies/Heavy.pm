@@ -75,6 +75,8 @@ sub _taint_flag {
 
 =over 4
 
+=item * Erik Huelsmann C<< <ehues at gmail.com> >>
+
 =item * Zev Benjamin C<< <zev at cpan.org> >>
 
 =back
