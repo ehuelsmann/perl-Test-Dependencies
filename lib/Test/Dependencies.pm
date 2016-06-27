@@ -132,6 +132,46 @@ sub _get_modules_used {
     return @modules;
 }
 
+sub _legacy_ok_dependencies {
+    my ($missing_dep);
+    my $tb = __PACKAGE__->builder;
+    {
+        local $@;
+
+        eval {
+            use CPAN::Meta;
+        };
+        eval {
+            use File::Find::Rule::Perl;
+        };
+
+        $missing_dep = $@;
+    }
+    die $missing_dep if $missing_dep;
+
+    my $meta;
+    for my $file (qw/ META.json META.yml /) {
+        if (-r $file) {
+            $tb->ok(1, "$file is present and readable");
+            $meta = CPAN::Meta->load_file($file);
+            last;
+        }
+    }
+
+    if (! $meta) {
+        $tb->level(2);
+        $tb->ok(0, "Missing META.{yml,json} file for dependency checking");
+        $tb->diag("Use the non-legacy invocation to provide the info");
+        return;
+    }
+
+    my @run = File::Find::Rule::Perl->perl_file->in(
+        grep { -e $_ } ('./bin', './lib', './t'));
+
+    ok_dependencies($meta, \@run, undef, undef,
+        ignores => [ 'ExtUtils::MakeMaker']);
+}
+
 
 =head1 EXPORTED FUNCTIONS
 
@@ -145,6 +185,10 @@ sub _get_modules_used {
 =cut
 
 sub ok_dependencies {
+
+    return _legacy_ok_dependencies
+        unless @_;
+
     my ($meta, $files, $phases, $features, %options) = @_;
 
     $features //= $meta->features;
