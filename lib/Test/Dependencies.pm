@@ -175,7 +175,7 @@ sub _legacy_ok_dependencies {
 
 =head1 EXPORTED FUNCTIONS
 
-=head2 ok_dependencies($meta, $files, $phases, $features)
+=head2 ok_dependencies($meta, $files, $phases, $features, %options)
 
  $meta is a CPAN::Meta object
  $files is an arrayref with files to be scanned
@@ -193,15 +193,13 @@ sub ok_dependencies {
 
     $features //= $meta->features;
     $features = [ $features ] unless ref $features;
-    $phases //= [ 'runtime', 'configure', 'test', 'develop' ];
+    $phases //= [ 'runtime', 'configure', 'build', 'test', 'develop' ];
     $phases = [ $phases ] unless ref $phases;
 
     my $tb = __PACKAGE__->builder;
     my %used = map { $_ => 1 } _get_modules_used($files);
 
-    my $prereqs = $meta->effective_prereqs;
-    $prereqs = $prereqs->with_merged_prereqs($_)
-        for (map { $_->prereqs } $meta->features);
+    my $prereqs = $meta->effective_prereqs($meta->features);
     my $reqs = [];
 
     push @$reqs, $prereqs->requirements_for($_, 'requires')
@@ -213,17 +211,21 @@ sub ok_dependencies {
         next if ! defined $_;
 
         my $ver = version->parse($_)->numify;
-        $min_perl_ver = (defined $min_perl_ver && $min_perl_ver < $ver)
-            ? $min_perl_ver : $ver;
         $minimum_perl = (defined $min_perl_ver && $min_perl_ver < $ver)
             ? $minimum_perl : $_;
+        $min_perl_ver = (defined $min_perl_ver && $min_perl_ver < $ver)
+            ? $min_perl_ver : $ver;
     }
+    $minimum_perl //= "v5.0.0";
+    $min_perl_ver //= 5.0;
 
     for my $req (@$reqs) {
         for my $mod (sort $req->required_modules) {
             next if $mod eq 'perl';
 
-            my $first_in = Module::CoreList->first_release($mod, $mod->VERSION);
+            my $first_in =
+                Module::CoreList->first_release($mod,
+                                                $req->requirements_for_module($mod));
             my $verstr = ($mod->VERSION) ? '(' . $mod->VERSION . ')' : '';
             my $corestr = version->parse($first_in)->normal;
             $tb->ok($first_in > $min_perl_ver,
@@ -235,9 +237,9 @@ sub ok_dependencies {
     }
 
     my %required;
-    for (@$reqs) {
-        $required{$_} = 1
-            for $_->required_modules;
+    for my $req (@$reqs) {
+        $required{$_} = $req->requirements_for_module($_)
+            for $req->required_modules;
     }
     delete $required{perl};
 
@@ -248,9 +250,10 @@ sub ok_dependencies {
     }
 
     foreach my $mod (sort keys %used) {
-        my $first_in = Module::CoreList->first_release($mod);
-        $tb->ok($first_in <= $min_perl_ver,
-                "Used core module '$mod' in core before perl $minimum_perl")
+        my $first_in = Module::CoreList->first_release($mod, $required{$mod});
+        $tb->ok($first_in <= $min_perl_ver || exists $required{$mod},
+                "Used core module '$mod' in core (since $first_in) "
+                . "before perl $minimum_perl or explicitly required")
             if defined $first_in;
 
         $tb->ok(exists $required{$mod},
