@@ -5,9 +5,9 @@ use Test::Dependencies;
 
 chdir "t-data/empty";
 
-test_out("not ok 1 - META.yml is present and readable");
+test_out("not ok 1 - Missing META.{yml,json} file for dependency checking");
 test_fail(+2);
-test_diag("You seem to be missing a META.yml.  I can't check which dependencies you've declared without it");
+test_diag("Use the non-legacy invocation to provide the info");
 ok_dependencies();
 test_test("empty directory fails to find META.yml");
 

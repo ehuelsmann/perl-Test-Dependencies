@@ -1,7 +1,8 @@
 #!perl
 
 use Test::Builder::Tester;
-use Test::More tests => 1;
+use Test::More;
+
 
 BEGIN {
   test_out("ok 1 - use Test::Dependencies;");
@@ -9,3 +10,6 @@ BEGIN {
           [qw/Some::Namespace Some::Other::Namespace/] );
   test_test("use Test::Dependencies;");
 }
+
+done_testing;
+
