@@ -1,0 +1,5 @@
+inc/
+MANIFEST
+META.*
+MYMETA.*
+Makefile
