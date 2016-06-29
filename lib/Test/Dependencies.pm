@@ -230,6 +230,7 @@ sub ok_dependencies {
     my ($meta, $files, %options) = @_;
     my $phases = $options{phases};
     my $features = $options{features};
+    my %ignores = map { $_ => 1 } @{$options{ignores} // []};
 
     $features //= $meta->features;
     $features = [ $features ] unless ref $features;
@@ -239,7 +240,8 @@ sub ok_dependencies {
     my $tb = __PACKAGE__->builder;
     my %used = map { $_ => 1 } _get_modules_used($files);
 
-    my $prereqs = $meta->effective_prereqs($meta->features);
+    my @meta_features = map { $_->identifier } $meta->features;
+    my $prereqs = $meta->effective_prereqs(\@meta_features);
     my $reqs = [];
 
     push @$reqs, $prereqs->requirements_for($_, 'requires')
@@ -262,6 +264,7 @@ sub ok_dependencies {
     for my $req (@$reqs) {
         for my $mod (sort $req->required_modules) {
             next if $mod eq 'perl';
+            next if exists $ignores{$mod} ||  $mod =~ $exclude_re;
 
             my $first_in =
                 Module::CoreList->first_release($mod,
@@ -283,13 +286,14 @@ sub ok_dependencies {
     }
     delete $required{perl};
 
-    my %ignores = map { $_ => 1 } @{$options{ignores} // []};
     foreach my $mod (sort keys %required) {
         $tb->ok(exists $used{$mod}, "Declared dependency $mod used")
-            unless exists $ignores{$mod};
+            unless exists $ignores{$mod} || $mod =~ $exclude_re;
     }
 
     foreach my $mod (sort keys %used) {
+        next if exists $ignores{$mod} ||  $mod =~ $exclude_re;
+
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
         $tb->ok($first_in <= $min_perl_ver || exists $required{$mod},
                 "Used core module '$mod' in core (since $first_in) "
