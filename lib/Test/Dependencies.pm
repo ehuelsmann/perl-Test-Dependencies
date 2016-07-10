@@ -267,10 +267,9 @@ sub ok_dependencies {
             next if $mod eq 'perl';
             next if exists $ignores{$mod} ||  $mod =~ $exclude_re;
 
-            my $first_in =
-                Module::CoreList->first_release($mod,
-                                                $req->requirements_for_module($mod));
-            my $verstr = ($mod->VERSION) ? '(' . $mod->VERSION . ')' : '';
+            my $req_version = $req->requirements_for_module($mod);
+            my $first_in = Module::CoreList->first_release($mod, $req_version);
+            my $verstr = ($req_version) ? '(' . $req_version . ')' : '';
             my $corestr = version->parse($first_in)->normal;
             $tb->ok($first_in > $min_perl_ver,
                     "Required core module '$mod'$verstr "
