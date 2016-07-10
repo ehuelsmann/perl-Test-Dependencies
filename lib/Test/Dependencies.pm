@@ -132,8 +132,9 @@ sub _get_modules_used {
     my ($files) = @_;
     my @modules;
 
+    require Test::Dependencies::Light;
     foreach my $file (sort @$files) {
-        my $ret = get_modules_used_in_file($file);
+        my $ret = Test::Dependencies::Light::get_modules_used_in_file($file);
         if (! defined $ret) {
             die "Could not determine modules used in '$file'";
         }
