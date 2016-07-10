@@ -1,6 +1,6 @@
 #!perl
 
-use Test::Needs + { 'B::PerlReq' => 0, 'PerlReq::Utils' => 0 };
+use Test::Needs 'B::PerlReq', 'PerlReq::Utils';
 
 # yay bootstrap!
 use Test::Dependencies exclude => [
