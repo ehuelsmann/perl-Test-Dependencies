@@ -1,5 +1,18 @@
 Revision history for Test-Dependencies
 
+0.21    Sun Jul 10, 2016
+        * fix test breakage all over the place (thanks @kentfredrick)
+        * report the minimum required version in error, instead of the
+          installed-and-loaded version
+
+0.20    Wed Jun 29, 2016
+        * only test files identified as 'Perl files' by File::Find::Rule::Perl
+        * add support for testing runtime, test, devel deps separately
+        * add support for cpanfile declared dependencies
+        * add support for declaring minimum Perl version (used to test
+          the list of core modules)
+        * ... and more ...
+
 0.12    Sun Nov 15 01:01:20 CST 2009
         * don't report "perl" being a required dependency when a
           minimum perl version is listed in META.yml
