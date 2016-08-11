@@ -13,6 +13,14 @@ To install this module, run the following commands:
     make test
     make install
 
+## RECOMMENDED USE
+
+This module supports the development process of declaring correct dependencies on your
+module. As such, it's best to include it as a `develop` dependency.  Additionally, any
+tests based on this module best be located outside of the 't/' directory which holds
+all tests executed upon installation of your module.  A growing number of authors uses
+'xt/' to store tests aiding the development process itself.  If anything, that's a
+good place to store your `Test::Dependencies` based tests.
 
 ## SUPPORT AND DOCUMENTATION
 
