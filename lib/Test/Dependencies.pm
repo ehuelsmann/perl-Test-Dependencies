@@ -69,7 +69,7 @@ very large project and you don't want to wait for the heavy style
 every time you run "make test," you might want to try the light
 style or look into the overrides below.
 
-Whether a style is specified or not, the style used can be overriden
+Whether a style is specified or not, the style used can be overridden
 by the environment variable TDSTYLE.  This is useful, for example, if
 you want the heavy style to be used normally, but don't want to take
 the time checking dependencies on your smoke test server.

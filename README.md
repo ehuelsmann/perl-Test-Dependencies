@@ -1,10 +1,10 @@
-Test-Dependencies
+# Test-Dependencies
 
 Makes sure that all of the modules that are 'use'd are listed in the
 Makefile.PL as dependencies.
 
 
-INSTALLATION
+## INSTALLATION
 
 To install this module, run the following commands:
 
@@ -13,8 +13,16 @@ To install this module, run the following commands:
     make test
     make install
 
+## RECOMMENDED USE
 
-SUPPORT AND DOCUMENTATION
+This module supports the development process of declaring correct dependencies on your
+module. As such, it's best to include it as a `develop` dependency.  Additionally, any
+tests based on this module best be located outside of the 't/' directory which holds
+all tests executed upon installation of your module.  A growing number of authors uses
+'xt/' to store tests aiding the development process itself.  If anything, that's a
+good place to store your `Test::Dependencies` based tests.
+
+## SUPPORT AND DOCUMENTATION
 
 After installing, you can find documentation for this module with the perldoc command.
 
@@ -34,14 +42,14 @@ You can also look for information at:
     CPAN Ratings:
         http://cpanratings.perl.org/d/Test-Dependencies
 
-LICENCE AND COPYRIGHT
+# LICENCE AND COPYRIGHT
     Copyright (c) 2016, Erik Huelsmann. All rights reserved.
     Copyright (c) 2007, Best Practical Solutions, LLC. All rights reserved.
 
     This module is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself. See perlartistic.
 
-DISCLAIMER OF WARRANTY
+# DISCLAIMER OF WARRANTY
     BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
     FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
     OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
