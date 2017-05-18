@@ -322,15 +322,19 @@ sub ok_dependencies {
         next if exists $ignores{$mod} ||  $mod =~ $exclude_re;
 
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
-        $tb->ok($first_in <= $min_perl_ver || exists $required{$mod},
+        my $result = $first_in <= $min_perl_ver || exists $required{$mod};
+        $tb->ok($result,
                 "Used core module '$mod' in core (since $first_in) "
                 . "before perl $minimum_perl or explicitly required"
-                . ( $_verbose ? " referred in " . join(', ',@{$used{$mod}}) : "" ))
+                . ( $_verbose && !$result ? " referred in " . join(', ',@{$used{$mod}}) : "" ))
             if defined $first_in;
 
-        $tb->ok(exists $required{$mod},
+        $result = exists $required{$mod};
+        $tb->ok($result,
                 "Used non-core module '$mod' in requirements listing"
-                . ( $_verbose ? " in " . join(', ',@{$used{$mod}}) : "" ))
+                . ( $_verbose && !$result
+                    ? " in " . join(', ',@{$used{$mod}})
+                    : "" ))
             unless defined $first_in or $mod =~ $exclude_re;
     }
 }
