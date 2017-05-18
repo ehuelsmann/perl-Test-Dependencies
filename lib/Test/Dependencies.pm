@@ -14,11 +14,11 @@ Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.22
+Version 0.23
 
 =cut
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 
 =head1 SYNOPSIS
 
@@ -87,6 +87,7 @@ Example usage:
 our @EXPORT = qw/ok_dependencies/;
 
 our $exclude_re;
+our $_verbose = 0;
 
 sub import {
   my $package = shift;
@@ -128,6 +129,7 @@ sub _choose_style {
   }
 }
 
+use Array::GroupBy;
 sub _get_modules_used {
     my ($files) = @_;
     my @modules;
@@ -138,9 +140,23 @@ sub _get_modules_used {
         if (! defined $ret) {
             die "Could not determine modules used in '$file'";
         }
-        push @modules, @$ret;
+        push @modules, map { { ret => $_, file => $file } } @$ret;
     }
-    return @modules;
+    return map { $_ => 1 } @modules
+        if !$_verbose;
+
+    @modules = sort { $a->{ret} cmp $b->{ret} } @modules;
+    my $iter = igroup_by (
+        data => \@modules,
+        compare => sub { $_[0]->{ret} eq $_[1]->{ret} }
+    );
+    my %m;
+    while ( my $b = $iter->() ) {
+        my ($ret,@files);
+        foreach ( @$b ) { $ret = $_->{ret}; push @files, $_->{file} }
+        $m{$ret} = [@files];
+    }
+    return %m;
 }
 
 sub _legacy_ok_dependencies {
@@ -208,6 +224,17 @@ This is an arrayref holding zero or more names of features, or undef for all
 This is a hashref listing the names of modules (and their sub-namespaces)
 for which no errors are to be reported.
 
+=item C<verbose>
+
+Sets the verbose level for the environment object to the specified value.
+
+=cut
+
+sub verbose {
+    my $self = shift;
+    $_verbose = $_;
+}
+
 =back
 
 =head2 ok_dependencies()
@@ -239,7 +266,7 @@ sub ok_dependencies {
     $phases = [ $phases ] unless ref $phases;
 
     my $tb = __PACKAGE__->builder;
-    my %used = map { $_ => 1 } _get_modules_used($files);
+    my %used = _get_modules_used($files);
 
     my @meta_features = map { $_->identifier } $meta->features;
     my $prereqs = $meta->effective_prereqs(\@meta_features);
@@ -287,7 +314,7 @@ sub ok_dependencies {
     delete $required{perl};
 
     foreach my $mod (sort keys %required) {
-        $tb->ok(exists $used{$mod}, "Declared dependency $mod used")
+        $tb->ok(exists $used{$mod},"Declared dependency $mod used")
             unless exists $ignores{$mod} || $mod =~ $exclude_re;
     }
 
@@ -297,11 +324,13 @@ sub ok_dependencies {
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
         $tb->ok($first_in <= $min_perl_ver || exists $required{$mod},
                 "Used core module '$mod' in core (since $first_in) "
-                . "before perl $minimum_perl or explicitly required")
+                . "before perl $minimum_perl or explicitly required"
+                . ( $_verbose ? " referred in " . join(', ',@{$used{$mod}}) : "" ))
             if defined $first_in;
 
         $tb->ok(exists $required{$mod},
-                "Used non-core module '$mod' in requirements listing")
+                "Used non-core module '$mod' in requirements listing"
+                . ( $_verbose ? " in " . join(', ',@{$used{$mod}}) : "" ))
             unless defined $first_in or $mod =~ $exclude_re;
     }
 }
