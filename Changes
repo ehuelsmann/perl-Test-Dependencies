@@ -1,5 +1,9 @@
 Revision history for Test-Dependencies
 
+0.23    Wed May 17, 2017
+        * Add verbosity in test report. Offending modules will be added to the
+          failed test result message for Used core and non-core module.
+
 0.22    Sat Aug 20, 2016
         * don't run load tests when Test::More is version 1.1.14; it has a bug
           leading to our tests to fail incorrectly (something about plan
