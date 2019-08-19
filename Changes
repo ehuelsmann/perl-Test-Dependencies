@@ -1,5 +1,10 @@
 Revision history for Test-Dependencies
 
+0.23    Sun Aug 21, 2016
+        * load tests don't fail on Test::More 1.30, but do on many versions
+          before it; increase minimum requirement (we'll phase out the old
+          interface at some point to resolve this issue for good though)
+
 0.22    Sat Aug 20, 2016
         * don't run load tests when Test::More is version 1.1.14; it has a bug
           leading to our tests to fail incorrectly (something about plan
