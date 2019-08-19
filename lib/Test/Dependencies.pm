@@ -58,6 +58,14 @@ specified dependencies.
 
 =item style
 
+B<DEPRECATED>
+
+There used to be the option of specifying a style; the heavy style
+depended on B::PerlReq. This module stopped working somewhere around
+Perl 5.20. Specifying a style no longer has any effect.
+
+Old text:
+
 Specifies the style of module usage checking to use.  There are two
 valid values: "light" and "heavy".  The default is heavy.  The
 light style uses regular expressions to try and guess which modules
@@ -110,7 +118,7 @@ sub import {
     if (defined $args{style}) {
       _choose_style($args{style});
     } else {
-      _choose_style('heavy');
+      _choose_style('light');
     }
   }
 
@@ -122,7 +130,7 @@ sub _choose_style {
   if (lc $style eq 'light') {
     eval 'use Test::Dependencies::Light';
   } elsif (lc $style eq 'heavy') {
-    eval 'use Test::Dependencies::Heavy';
+    eval 'use Test::Dependencies::Light';
   } else {
     carp "Unknown style: '", $style, "'";
   }
@@ -354,7 +362,7 @@ L<http://search.cpan.org/dist/Test-Dependencies>
 
 =head1 LICENCE AND COPYRIGHT
 
-    Copyright (c) 2016, Erik Huelsmann. All rights reserved.
+    Copyright (c) 2016-2019, Erik Huelsmann. All rights reserved.
     Copyright (c) 2007, Best Practical Solutions, LLC. All rights reserved.
 
     This module is free software; you can redistribute it and/or modify it
