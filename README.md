@@ -1,4 +1,10 @@
-# Test-Dependencies
+# NAME
+
+Test-Dependencies
+
+[![Build Status](https://travis-ci.org/ehuelsmann/perl-Test-Dependencies.svg?branch=master)](https://travis-ci.org/ehuelsmann/perl-Test-Dependencies)
+
+# DESCRIPTION
 
 Makes sure that all of the modules that are 'use'd are listed in the
 Makefile.PL as dependencies.
