@@ -328,11 +328,9 @@ sub ok_dependencies {
 
 =back
 
-Please report any bugs or feature requests to
-C<bug-test-dependencies at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Dependencies>.
-I will be notified, and then you'll automatically be notified of progress on
-your bug as I make changes.
+Please report your bugs on GitHub:
+
+   L<https://github.com/ehuelsmann/perl-Test-Dependencies/issues>
 
 =head1 SUPPORT
 
@@ -344,17 +342,9 @@ You can also look for information at:
 
 =over 4
 
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Test-Dependencies>
-
 =item * CPAN Ratings
 
 L<http://cpanratings.perl.org/d/Test-Dependencies>
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Dependencies>
 
 =item * Search CPAN
 
