@@ -15,7 +15,7 @@ perl:
 
 install:
   - dzil authordeps --missing | cpanm --notest --no-skip-satisfied
-  - dzil listdeps --author --missing | cpanm --notest --no-skip-satisfied
+  - PERL_MM_USE_DEFAULT=1 dzil listdeps --author --missing | cpanm --notest --no-skip-satisfied
 
 script:
-  - dzil test --author --release
+  - PERL_MM_USE_DEFAULT=1 dzil test --author --release
