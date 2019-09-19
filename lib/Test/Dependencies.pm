@@ -14,11 +14,11 @@ Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.23
+Version 0.24
 
 =cut
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 
 =head1 SYNOPSIS
 
@@ -110,6 +110,9 @@ sub import {
         unless $namespace =~ m/^(?:(?:\w+::)|)+\w+$/;
     }
     $exclude_re = join '|', map { "^$_(\$|::)" } @{$args{exclude}};
+  }
+  else {
+      $exclude_re = qr/^$/;
   }
 
   if (defined $ENV{TDSTYLE}) {
