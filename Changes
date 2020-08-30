@@ -1,6 +1,9 @@
 Revision history for Test-Dependencies
 
 0.25    Sun Aug 30, 2020
+        * New 'forward_compatible' option to stop 'plan' being emitted
+          from import() - ie. in the use statement.
+          Use this option to be 1.0 compatible
         * Documentation correction for ok_dependencies() 'ignores' parameter.
         * Fix 'ignores' matching only modules where it is documented to
           specify the root of a namespace hierarchy
