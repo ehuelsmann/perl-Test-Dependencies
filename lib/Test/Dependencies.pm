@@ -216,7 +216,7 @@ This is an arrayref holding zero or more names of features, or undef for all
 
 =item ignores
 
-This is a hashref listing the names of modules (and their sub-namespaces)
+This is a arrayref listing the names of modules (and their sub-namespaces)
 for which no errors are to be reported.
 
 =back
@@ -242,7 +242,12 @@ sub ok_dependencies {
     my ($meta, $files, %options) = @_;
     my $phases = $options{phases};
     my $features = $options{features};
-    my %ignores = map { $_ => 1 } @{$options{ignores} // []};
+    my $ignores_re = '^(?:' . join('|',
+                                   # create regex for sub-namespaces
+                                   map { "$_(?:::.*)?" }
+                                   @{$options{ignores} // []})
+                        . ')$';
+    $ignores_re = qr/$ignores_re/;
 
     $features //= $meta->features;
     $features = [ $features ] unless ref $features;
@@ -275,8 +280,9 @@ sub ok_dependencies {
 
     for my $req (@$reqs) {
         for my $mod (sort $req->required_modules) {
-            next if $mod eq 'perl';
-            next if exists $ignores{$mod} ||  $mod =~ $exclude_re;
+            next if ($mod eq 'perl'
+                     or $mod =~ $ignores_re
+                     or $mod =~ $exclude_re);
 
             my $req_version = $req->requirements_for_module($mod);
             my $first_in = Module::CoreList->first_release($mod, $req_version);
@@ -299,11 +305,11 @@ sub ok_dependencies {
 
     foreach my $mod (sort keys %required) {
         $tb->ok(exists $used{$mod}, "Declared dependency $mod used")
-            unless exists $ignores{$mod} || $mod =~ $exclude_re;
+            unless $mod =~ $ignores_re || $mod =~ $exclude_re;
     }
 
     foreach my $mod (sort keys %used) {
-        next if exists $ignores{$mod} ||  $mod =~ $exclude_re;
+        next if $mod =~ $ignores_re ||  $mod =~ $exclude_re;
 
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
         $tb->ok($first_in <= $min_perl_ver || exists $required{$mod},
