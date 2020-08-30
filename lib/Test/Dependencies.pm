@@ -284,6 +284,10 @@ sub ok_dependencies {
                      or $mod =~ $ignores_re
                      or $mod =~ $exclude_re);
 
+            # if the module is/was deprecated from CORE,
+            # it makes sense to require it, if the dependency exists
+            next if Module::CoreList->deprecated_in($mod);
+
             my $req_version = $req->requirements_for_module($mod);
             my $first_in = Module::CoreList->first_release($mod, $req_version);
             my $verstr = ($req_version) ? '(' . $req_version . ')' : '';
