@@ -1,5 +1,9 @@
 Revision history for Test-Dependencies
 
+0.27    2020-08-30
+        * Modules can be removed without having been deprecated; 0.26 assumed
+          deprecation before removal -- this release corrects that
+
 0.26    2020-08-30
         * Fix uninitialized variable warnings when in 'forward_compatible' mode
         * Upgrade Module::CoreList dep to 5.20200620 to include Perl 5.32

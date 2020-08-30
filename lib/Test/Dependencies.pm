@@ -15,11 +15,11 @@ Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.26
+Version 0.27
 
 =cut
 
-our $VERSION = '0.26';
+our $VERSION = '0.27';
 
 =head1 SYNOPSIS
 
@@ -29,7 +29,7 @@ In your t/00-dependencies.t:
     use File::Find::Rule::Perl;
 
     use Test::More;
-    use Test::Dependencies '0.26' forward_compatible => 1;
+    use Test::Dependencies '0.27' forward_compatible => 1;
 
     my $meta = CPAN::Meta->load_file('META.yml');
     plan skip_all => 'No META.yml' if ! $meta;
