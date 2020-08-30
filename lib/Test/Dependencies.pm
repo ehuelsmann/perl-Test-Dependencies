@@ -27,7 +27,9 @@ In your t/00-dependencies.t:
 
     use CPAN::Meta;  # or CPAN::Meta::cpanfile
     use File::Find::Rule::Perl;
-    use Test::Dependencies '0.25' forward_compatible => 1;
+
+    use Test::More;
+    use Test::Dependencies '0.26' forward_compatible => 1;
 
     my $meta = CPAN::Meta->load_file('META.yml');
     plan skip_all => 'No META.yml' if ! $meta;
@@ -268,7 +270,7 @@ sub ok_dependencies {
         for my $mod (sort $req->required_modules) {
             next if ($mod eq 'perl'
                      or $mod =~ $ignores_re
-                     or $mod =~ $exclude_re);
+                     or ($exclude_re and $mod =~ $exclude_re));
 
             # if the module is/was deprecated from CORE,
             # it makes sense to require it, if the dependency exists
@@ -295,11 +297,13 @@ sub ok_dependencies {
 
     foreach my $mod (sort keys %required) {
         $tb->ok(exists $used{$mod}, "Declared dependency $mod used")
-            unless $mod =~ $ignores_re or $mod =~ $exclude_re;
+            unless ($mod =~ $ignores_re
+                    or ($exclude_re and $mod =~ $exclude_re));
     }
 
     foreach my $mod (sort keys %used) {
-        next if $mod =~ $ignores_re or  $mod =~ $exclude_re;
+        next if ($mod =~ $ignores_re
+                 or ($exclude_re and  $mod =~ $exclude_re));
 
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
         if (defined $first_in) {

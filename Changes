@@ -1,5 +1,10 @@
 Revision history for Test-Dependencies
 
+0.26    Sun Aug 30, 2020
+        * Fix uninitialized variable warnings when in 'forward_compatible' mode
+        * Upgrade Module::CoreList dep to 5.20200620 to include Perl 5.32
+          module status in tests
+
 0.25    Sun Aug 30, 2020
         * New 'forward_compatible' option to stop 'plan' being emitted
           from import() - ie. in the use statement.
