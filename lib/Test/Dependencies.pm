@@ -6,7 +6,7 @@ use strict;
 use Carp;
 use Module::CoreList;
 
-use base 'Test::Builder::Module';
+use parent 'Test::Builder::Module';
 
 =head1 NAME
 
