@@ -274,14 +274,15 @@ sub ok_dependencies {
 
             # if the module is/was deprecated from CORE,
             # it makes sense to require it, if the dependency exists
-            next if Module::CoreList->deprecated_in($mod);
+            next if (Module::CoreList->deprecated_in($mod)
+                     or Module::CoreList->removed_from($mod));
 
             my $req_version = $req->requirements_for_module($mod);
             my $first_in = Module::CoreList->first_release($mod, $req_version);
             my $verstr = ($req_version) ? '(' . $req_version . ')' : '';
             my $corestr = version->parse($first_in)->normal;
             $tb->ok($first_in > $min_perl_ver,
-                    "Required core module '$mod'$verstr "
+                    "Required module '$mod'$verstr "
                     . "in core (since $corestr) after minimum perl "
                     . $minimum_perl )
                 if defined $first_in;
@@ -306,10 +307,24 @@ sub ok_dependencies {
                  or ($exclude_re and  $mod =~ $exclude_re));
 
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
-        if (defined $first_in) {
+        if (my $v = Module::CoreList->removed_from($mod)) {
+            $v = version->parse($v)->normal;
+            $tb->ok($required{$mod},
+                    "Removed-from-CORE (since $v) module '$mod' "
+                    . 'explicitly required');
+        }
+        elsif (my $v = Module::CoreList->deprecated_in($mod)) {
+            $v = version->parse($v)->normal;
+            $tb->ok($required{$mod},
+                    "Deprecated-from-CORE (since $v) module '$mod' explicitly "
+                    . 'required to anticipate removal');
+        }
+        elsif (defined $first_in) {
+            my $v = version->parse($first_in)->normal;
             $tb->ok($first_in <= $min_perl_ver or exists $required{$mod},
-                    "Used CORE module '$mod' in core (since $first_in) "
-                    . "before perl $minimum_perl or explicitly required");
+                    "Used CORE module '$mod' in core before "
+                    . "Perl $minimum_perl (since $v) "
+                    . "or explicitly required");
         }
         else {
             $tb->ok(exists $required{$mod},
