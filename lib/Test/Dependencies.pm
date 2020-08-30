@@ -68,24 +68,6 @@ There used to be the option of specifying a style; the heavy style
 depended on B::PerlReq. This module stopped working somewhere around
 Perl 5.20. Specifying a style no longer has any effect.
 
-Old text:
-
-Specifies the style of module usage checking to use.  There are two
-valid values: "light" and "heavy".  The default is heavy.  The
-light style uses regular expressions to try and guess which modules
-are required.  It is fast, but can get confused by here-docs,
-multi-line strings, data sections, etc.  The heavy style actually
-compiles the file and asks perl which modules were used.  It is
-slower than the light style, but much more accurate.  If you have a
-very large project and you don't want to wait for the heavy style
-every time you run "make test," you might want to try the light
-style or look into the overrides below.
-
-Whether a style is specified or not, the style used can be overridden
-by the environment variable TDSTYLE.  This is useful, for example, if
-you want the heavy style to be used normally, but don't want to take
-the time checking dependencies on your smoke test server.
-
 =back
 
 =cut
