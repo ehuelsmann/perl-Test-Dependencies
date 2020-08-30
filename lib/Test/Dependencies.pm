@@ -309,14 +309,14 @@ sub ok_dependencies {
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
         if (my $v = Module::CoreList->removed_from($mod)) {
             $v = version->parse($v)->normal;
-            $tb->ok($required{$mod},
-                    "Removed-from-CORE (since $v) module '$mod' "
+            $tb->ok(exists $required{$mod},
+                    "Removed-from-CORE (in $v) module '$mod' "
                     . 'explicitly required');
         }
         elsif (my $v = Module::CoreList->deprecated_in($mod)) {
             $v = version->parse($v)->normal;
-            $tb->ok($required{$mod},
-                    "Deprecated-from-CORE (since $v) module '$mod' explicitly "
+            $tb->ok(exists $required{$mod},
+                    "Deprecated-from-CORE (in $v) module '$mod' explicitly "
                     . 'required to anticipate removal');
         }
         elsif (defined $first_in) {
