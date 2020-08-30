@@ -26,17 +26,16 @@ In your t/00-dependencies.t:
 
     use CPAN::Meta;  # or CPAN::Meta::cpanfile
     use File::Find::Rule::Perl;
-    use Test::Dependencies exclude =>
-      [qw/ Your::Namespace Some::Other::Namespace /];
+    use Test::Dependencies forward_compatible => 1;
 
     my $meta = CPAN::Meta->load_file('META.yml');
-    die "No META.yml" if ! $meta;
+    plan skip => 'No META.yml' if ! $meta;
 
-    my @files =
-       File::Find::Rule::Perl->perl_files->in('./lib', './bin');
 
+    my @files = File::Find::Rule::Perl->perl_files->in('./lib', './bin');
     ok_dependencies($meta, \@files);
 
+    done_testing;
 
 =head1 DESCRIPTION
 
@@ -50,6 +49,11 @@ These options will be moved to the ok_dependencies() function.
 The available options are:
 
 =over 4
+
+=item forward_compatible
+
+When specified and true, stops the module from outputting a plan, which
+is the default mode of operation when the module becomes 1.0.
 
 =item exclude
 
@@ -82,12 +86,6 @@ by the environment variable TDSTYLE.  This is useful, for example, if
 you want the heavy style to be used normally, but don't want to take
 the time checking dependencies on your smoke test server.
 
-Example usage:
-
-  use Test::Dependencies
-    exclude => ['Test::Dependencies'],
-    style => 'light';
-
 =back
 
 =cut
@@ -102,27 +100,30 @@ sub import {
   my $callerpack = caller;
   my $tb = __PACKAGE__->builder;
   $tb->exported_to($callerpack);
-  $tb->no_plan;
 
-  if (defined $args{exclude}) {
-    foreach my $namespace (@{$args{exclude}}) {
-      croak "$namespace is not a valid namespace"
-        unless $namespace =~ m/^(?:(?:\w+::)|)+\w+$/;
-    }
-    $exclude_re = join '|', map { "^$_(\$|::)" } @{$args{exclude}};
-  }
-  else {
-      $exclude_re = qr/^$/;
-  }
+  unless ($args{forward_compatible}) {
+      $tb->no_plan;
 
-  if (defined $ENV{TDSTYLE}) {
-    _choose_style($ENV{TDSTYLE});
-  } else {
-    if (defined $args{style}) {
-      _choose_style($args{style});
-    } else {
-      _choose_style('light');
-    }
+      if (defined $args{exclude}) {
+          foreach my $namespace (@{$args{exclude}}) {
+              croak "$namespace is not a valid namespace"
+                  unless $namespace =~ m/^(?:(?:\w+::)|)+\w+$/;
+          }
+          $exclude_re = join '|', map { "^$_(\$|::)" } @{$args{exclude}};
+      }
+      else {
+          $exclude_re = qr/^$/;
+      }
+
+      if (defined $ENV{TDSTYLE}) {
+          _choose_style($ENV{TDSTYLE});
+      } else {
+          if (defined $args{style}) {
+              _choose_style($args{style});
+          } else {
+              _choose_style('light');
+          }
+      }
   }
 
   $package->export_to_level(1, '', qw/ok_dependencies/);
