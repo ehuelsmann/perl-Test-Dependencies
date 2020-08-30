@@ -5,6 +5,7 @@ use strict;
 
 use Carp;
 use Module::CoreList;
+use Pod::Strip;
 
 use parent 'Test::Builder::Module';
 
@@ -14,11 +15,11 @@ Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.24
+Version 0.25
 
 =cut
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 =head1 SYNOPSIS
 
@@ -26,14 +27,16 @@ In your t/00-dependencies.t:
 
     use CPAN::Meta;  # or CPAN::Meta::cpanfile
     use File::Find::Rule::Perl;
-    use Test::Dependencies forward_compatible => 1;
+    use Test::Dependencies '0.25' forward_compatible => 1;
 
     my $meta = CPAN::Meta->load_file('META.yml');
-    plan skip => 'No META.yml' if ! $meta;
-
+    plan skip_all => 'No META.yml' if ! $meta;
 
     my @files = File::Find::Rule::Perl->perl_files->in('./lib', './bin');
-    ok_dependencies($meta, \@files);
+    ok_dependencies($meta, \@files, [qw/runtime configure build test/],
+                    undef, # all features in the cpanfile
+                    ignores => [ qw/ Your::Namespace Some::Other::Namespace / ]
+    );
 
     done_testing;
 
@@ -96,39 +99,39 @@ sub import {
       else {
           $exclude_re = qr/^$/;
       }
-
-      if (defined $ENV{TDSTYLE}) {
-          _choose_style($ENV{TDSTYLE});
-      } else {
-          if (defined $args{style}) {
-              _choose_style($args{style});
-          } else {
-              _choose_style('light');
-          }
-      }
   }
 
   $package->export_to_level(1, '', qw/ok_dependencies/);
 }
 
-sub _choose_style {
-  my $style = shift;
-  if (lc $style eq 'light') {
-    eval 'use Test::Dependencies::Light';
-  } elsif (lc $style eq 'heavy') {
-    eval 'use Test::Dependencies::Light';
-  } else {
-    carp "Unknown style: '", $style, "'";
-  }
+
+sub _get_modules_used_in_file {
+    my $file = shift;
+    my ($fh, $code);
+    my %used;
+
+    local $/;
+    open $fh, $file or return undef;
+    my $data = <$fh>;
+    close $fh;
+    my $p = Pod::Strip->new;
+    $p->output_string(\$code);
+    $p->parse_string_document($data);
+    $used{$2}++ while $code =~ /^\s*(use|with|extends)\s+['"]?([\w:]+)['"]?/gm;
+    while ($code =~ m{^\s*use\s+base
+                          \s+(?:qw.|(?:(?:['"]|q.|qq.)))([\w\s:]+)}gmx) {
+        $used{$_}++ for split ' ', $1;
+    }
+
+    return [keys %used];
 }
 
 sub _get_modules_used {
     my ($files) = @_;
     my @modules;
 
-    require Test::Dependencies::Light;
     foreach my $file (sort @$files) {
-        my $ret = Test::Dependencies::Light::get_modules_used_in_file($file);
+        my $ret = _get_modules_used_in_file($file);
         if (! defined $ret) {
             die "Could not determine modules used in '$file'";
         }
