@@ -307,20 +307,21 @@ sub ok_dependencies {
                  or ($exclude_re and  $mod =~ $exclude_re));
 
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
-        if (my $v = Module::CoreList->removed_from($mod)) {
+        my $v;
+        if ($v = Module::CoreList->removed_from($mod)) {
             $v = version->parse($v)->normal;
             $tb->ok(exists $required{$mod},
                     "Removed-from-CORE (in $v) module '$mod' "
                     . 'explicitly required');
         }
-        elsif (my $v = Module::CoreList->deprecated_in($mod)) {
+        elsif ($v = Module::CoreList->deprecated_in($mod)) {
             $v = version->parse($v)->normal;
             $tb->ok(exists $required{$mod},
                     "Deprecated-from-CORE (in $v) module '$mod' explicitly "
                     . 'required to anticipate removal');
         }
         elsif (defined $first_in) {
-            my $v = version->parse($first_in)->normal;
+            $v = version->parse($first_in)->normal;
             $tb->ok($first_in <= $min_perl_ver or exists $required{$mod},
                     "Used CORE module '$mod' in core before "
                     . "Perl $minimum_perl (since $v) "
