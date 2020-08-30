@@ -270,9 +270,9 @@ sub ok_dependencies {
         next if ! defined $_;
 
         my $ver = version->parse($_)->numify;
-        $minimum_perl = (defined $min_perl_ver && $min_perl_ver < $ver)
+        $minimum_perl = (defined $min_perl_ver and $min_perl_ver < $ver)
             ? $minimum_perl : $_;
-        $min_perl_ver = (defined $min_perl_ver && $min_perl_ver < $ver)
+        $min_perl_ver = (defined $min_perl_ver and $min_perl_ver < $ver)
             ? $min_perl_ver : $ver;
     }
     $minimum_perl //= "v5.0.0";
@@ -309,21 +309,22 @@ sub ok_dependencies {
 
     foreach my $mod (sort keys %required) {
         $tb->ok(exists $used{$mod}, "Declared dependency $mod used")
-            unless $mod =~ $ignores_re || $mod =~ $exclude_re;
+            unless $mod =~ $ignores_re or $mod =~ $exclude_re;
     }
 
     foreach my $mod (sort keys %used) {
-        next if $mod =~ $ignores_re ||  $mod =~ $exclude_re;
+        next if $mod =~ $ignores_re or  $mod =~ $exclude_re;
 
         my $first_in = Module::CoreList->first_release($mod, $required{$mod});
-        $tb->ok($first_in <= $min_perl_ver || exists $required{$mod},
-                "Used core module '$mod' in core (since $first_in) "
-                . "before perl $minimum_perl or explicitly required")
-            if defined $first_in;
-
-        $tb->ok(exists $required{$mod},
-                "Used non-core module '$mod' in requirements listing")
-            unless defined $first_in or $mod =~ $exclude_re;
+        if (defined $first_in) {
+            $tb->ok($first_in <= $min_perl_ver or exists $required{$mod},
+                    "Used CORE module '$mod' in core (since $first_in) "
+                    . "before perl $minimum_perl or explicitly required");
+        }
+        else {
+            $tb->ok(exists $required{$mod},
+                    "Used non-CORE module '$mod' in requirements listing");
+        }
     }
 }
 
