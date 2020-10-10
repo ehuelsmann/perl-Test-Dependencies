@@ -31,8 +31,8 @@ In your t/00-dependencies.t:
     use Test::More;
     use Test::Dependencies '0.28' forward_compatible => 1;
 
-    my $meta = CPAN::Meta->load_file('META.yml');
-    plan skip_all => 'No META.yml' if ! $meta;
+    my $meta = CPAN::Meta->load_file('META.json'); # or META.yml
+    plan skip_all => 'No META.json' if ! $meta;
 
     my @files = File::Find::Rule::Perl->perl_files->in('./lib', './bin');
     ok_dependencies($meta, \@files, [qw/runtime configure build test/],
