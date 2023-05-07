@@ -150,12 +150,8 @@ sub _legacy_ok_dependencies {
     {
         local $@;
 
-        eval {
-            use CPAN::Meta;
-        };
-        eval {
-            use File::Find::Rule::Perl;
-        };
+        eval "use CPAN::Meta;";
+        eval "use File::Find::Rule::Perl;";
 
         $missing_dep = $@;
     }
