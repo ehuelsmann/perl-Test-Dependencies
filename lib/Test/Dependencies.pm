@@ -119,6 +119,8 @@ sub _get_modules_used_in_file {
     my $p = Pod::Strip->new;
     $p->output_string(\$code);
     $p->parse_string_document($data);
+    $code =~ m/^(__DATA__|__END__)$.*/m
+        and $code = $`; # strip data and end sections ($`==$PREMATCH)
     $used{$2}++ while $code =~ /^\s*(use|with|extends)\s+['"]?([\w:.]+)['"]?/gm;
     while ($code =~ m{^\s*use\s+base
                           \s+(?:qw.|(?:(?:['"]|q.|qq.)))([\w\s:]+)}gmx) {
