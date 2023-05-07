@@ -5,3 +5,4 @@ MYMETA.*
 Makefile
 Test-Dependencies-*
 .build/*
+devel/
