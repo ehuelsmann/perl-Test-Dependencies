@@ -15,11 +15,11 @@ Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.30
+Version 0.31
 
 =cut
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
 =head1 SYNOPSIS
 
@@ -381,7 +381,7 @@ L<http://search.cpan.org/dist/Test-Dependencies>
 
 =head1 LICENCE AND COPYRIGHT
 
-    Copyright (c) 2016-2020, Erik Huelsmann. All rights reserved.
+    Copyright (c) 2016-2023, Erik Huelsmann. All rights reserved.
     Copyright (c) 2007, Best Practical Solutions, LLC. All rights reserved.
 
     This module is free software; you can redistribute it and/or modify it
