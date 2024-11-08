@@ -15,11 +15,11 @@ Test::Dependencies - Ensure that the dependency listing is complete
 
 =head1 VERSION
 
-Version 0.32
+Version 0.33
 
 =cut
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 =head1 SYNOPSIS
 

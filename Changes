@@ -1,5 +1,8 @@
 Revision history for Test-Dependencies
 
+0.33    2024-11-08
+        * Add detection of 'parent' dependencies (same as 'base')
+
 0.32    2023-05-07
         * Fix dist.ini preventing uploading all deps
 
