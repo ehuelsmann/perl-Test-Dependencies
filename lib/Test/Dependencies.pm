@@ -122,7 +122,7 @@ sub _get_modules_used_in_file {
     $code =~ m/^(__DATA__|__END__)$.*/m
         and $code = $`; # strip data and end sections ($`==$PREMATCH)
     $used{$2}++ while $code =~ /^\s*(use|with|extends)\s+['"]?([\w:.]+)['"]?/gm;
-    while ($code =~ m{^\s*use\s+base
+    while ($code =~ m{^\s*use\s+(base|parent)
                           \s+(?:qw.|(?:(?:['"]|q.|qq.)))([\w\s:]+)}gmx) {
         $used{$_}++ for split ' ', $1;
     }
