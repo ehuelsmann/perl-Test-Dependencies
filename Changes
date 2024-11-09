@@ -1,5 +1,8 @@
 Revision history for Test-Dependencies
 
+0.34    2024-11-09
+        * Fix regex by changing new group to be non-capturing
+
 0.33    2024-11-08
         * Add detection of 'parent' dependencies (same as 'base')
 
